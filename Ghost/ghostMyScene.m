@@ -251,24 +251,6 @@ shapeNode.position = CGPointMake(point,
         //get the text of that child
         //append the text to the currentWord string
         
-//        for (float i = 0; i <=320; i++) {
-//            [self enumerateChildNodesWithName:@"immovable" usingBlock:^(SKNode *node, BOOL *stop) {
-//               // if (node.position.x >= i){
-//                NSArray *letterNodes = node.children;
-//                for (SKLabelNode *letterNode in letterNodes) {
-//                    _letterToAppend = letterNode.name;
-//                    NSLog(@"the current word is %@", _currentWord);
-//                      _currentWord = [_currentWord stringByAppendingString:_letterToAppend];
-//                }
-//
-//                
-//              //  }
-//                
-//            }];
-//           
-//            
-//            
-//        }
         NSMutableArray *fixedTiles = [[NSMutableArray alloc] init];
         [self enumerateChildNodesWithName:@"immovable" usingBlock:^(SKNode *node, BOOL *stop) {
                 [fixedTiles addObject:node];
