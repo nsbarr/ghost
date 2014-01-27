@@ -8,6 +8,10 @@
 
 #import <SpriteKit/SpriteKit.h>
 
+@class ghostViewController;
+
 @interface ghostMyScene : SKScene
+
+@property (nonatomic, strong) ghostViewController *ghostViewController;
 
 @end

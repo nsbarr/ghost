@@ -477,6 +477,7 @@
 				7877BB0E188ED02A001A46D0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		7877BB0F188ED02A001A46D0 /* Build configuration list for PBXNativeTarget "GhostTests" */ = {
 			isa = XCConfigurationList;
@@ -485,6 +486,7 @@
 				7877BB11188ED02A001A46D0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
