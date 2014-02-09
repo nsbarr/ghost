@@ -24,6 +24,7 @@
 		7877BAFF188ED02A001A46D0 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7877BADA188ED02A001A46D0 /* UIKit.framework */; };
 		7877BB07188ED02A001A46D0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7877BB05188ED02A001A46D0 /* InfoPlist.strings */; };
 		7877BB09188ED02A001A46D0 /* GhostTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 7877BB08188ED02A001A46D0 /* GhostTests.m */; };
+		78C3809E18A1BC3A001CFAB7 /* everyword.txt in Resources */ = {isa = PBXBuildFile; fileRef = 78C3809D18A1BC3A001CFAB7 /* everyword.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 		7877BB04188ED02A001A46D0 /* GhostTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GhostTests-Info.plist"; sourceTree = "<group>"; };
 		7877BB06188ED02A001A46D0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		7877BB08188ED02A001A46D0 /* GhostTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GhostTests.m; sourceTree = "<group>"; };
+		78C3809D18A1BC3A001CFAB7 /* everyword.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = everyword.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +130,7 @@
 				7877BAEE188ED02A001A46D0 /* ghostViewController.m */,
 				7877BAF0188ED02A001A46D0 /* ghostMyScene.h */,
 				7877BAF1188ED02A001A46D0 /* ghostMyScene.m */,
+				78C3809D18A1BC3A001CFAB7 /* everyword.txt */,
 				7877BAF3188ED02A001A46D0 /* Spaceship.png */,
 				7877BAF5188ED02A001A46D0 /* Images.xcassets */,
 				7877BADF188ED02A001A46D0 /* Supporting Files */,
@@ -241,6 +244,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				78C3809E18A1BC3A001CFAB7 /* everyword.txt in Resources */,
 				7877BAE3188ED02A001A46D0 /* InfoPlist.strings in Resources */,
 				7877BAF6188ED02A001A46D0 /* Images.xcassets in Resources */,
 				7877BAF4188ED02A001A46D0 /* Spaceship.png in Resources */,

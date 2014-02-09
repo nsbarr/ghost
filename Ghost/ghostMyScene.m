@@ -18,10 +18,11 @@ static NSString * const TileLetterName = @"movable";
 @property (nonatomic) BOOL tilesAreSlidOver;
 @property (nonatomic) int numberOfTilesInSlots;
 @property (nonatomic) CGPoint originalLocation;
-@property (nonatomic) CGFloat centerLocation;
+@property (nonatomic) CGFloat minimumBoardHeight;
 @property (nonatomic) int distanceBetweenTileAndSlot;
 @property (nonatomic, strong) NSString* currentWord;
 @property (nonatomic, strong) NSString* letterToAppend;
+@property (strong, nonatomic) NSMutableArray *arrayOfPossibleWords;
 
 
 
@@ -32,19 +33,34 @@ static NSString * const TileLetterName = @"movable";
 -(id)initWithSize:(CGSize)size {    
     if (self = [super initWithSize:size]) {
         
+        NSString *path = [[NSBundle mainBundle] pathForResource:@"everyword"
+                                        ofType:@"txt"];
+        NSString *content = [NSString stringWithContentsOfFile:path
+                                                      encoding:NSUTF8StringEncoding
+                                                         error:NULL];
+        NSString *rawStuffCaps = [content uppercaseString];
+    
+        
+        
         //reset stuff
         _numberOfTilesInSlots = 0;
         _tilesAreSlidOver = FALSE;
         _currentWord = @"";
-        self.backgroundColor = [SKColor colorWithRed:0.15 green:0.15 blue:0.3 alpha:1.0];
+        _minimumBoardHeight = 300;
+        self.arrayOfPossibleWords= [[NSMutableArray alloc] initWithObjects:@"TIMESLOT",@"INCISIVE",@"ANTIQUES",@"HANGOVER",@"ANIMATED",@"FLATWARE", @"HANGOUT",@"APPETITE", nil];
+    //  self.arrayOfPossibleWords = [[rawStuffCaps componentsSeparatedByString:@" "] mutableCopy];
+      //self.arrayOfPossibleWords = [rawStuff componentsSeparatedByString:@" "];
+        
+        UIColor *deep = [UIColor colorWithRed:3.0/255 green:5.0/255 blue:13.0/255 alpha:1];
+
+        self.backgroundColor = deep;//[SKColor colorWithRed:0.15 green:0.15 blue:0.3 alpha:1.0];
         
         
         //starting array of letters
-        NSArray *array = [NSArray arrayWithObjects:@"C",@"Y",@"F",@"E",@"K",@"S", @"U", @"!", nil];
+        NSArray *array = [NSArray arrayWithObjects:@"S",@"E",@"T",@"M",@"F",@"N", @"I", @"U", nil];
         
         //generate the tiles with letters
-        int i;
-        for (i = 0; i < array.count; i++) {
+        for (int i = 0; i < array.count; i++) {
             CGFloat position = i*40.0f+20;
             NSString *letterToPass = [array objectAtIndex:i];
             [self generateTileWithLetter:letterToPass withXPosition:position];
@@ -54,15 +70,20 @@ static NSString * const TileLetterName = @"movable";
     return self;
 }
 
+- (void)addTileToParent:(SKNode*)parentNode letter:(NSString*)letter x:(CGFloat)x {
+    
+}
 
-- (void)generateTileWithLetter:(NSString*)string withXPosition:(CGFloat)point {
+
+- (void)generateTileWithLetter:(NSString*)string withXPosition:(CGFloat)x {
     
     //called by initWithSize
-    SKSpriteNode *tile = [[SKSpriteNode alloc] initWithColor:[SKColor redColor] size:CGSizeMake(40,40)];
-    tile.position = CGPointMake(point,100);
+    UIColor *deep = [UIColor colorWithRed:3.0/255 green:5.0/255 blue:13.0/255 alpha:1];
+    SKSpriteNode *tile = [[SKSpriteNode alloc] initWithColor:deep size:CGSizeMake(40,40)];
+    tile.position = CGPointMake(x,100);
     [tile setName:TileLetterName];
     
-    SKLabelNode *myLabel = [SKLabelNode labelNodeWithFontNamed:@"AmericanTypewriter"];
+    SKLabelNode *myLabel = [SKLabelNode labelNodeWithFontNamed:@"GillSans"];
     myLabel.text = string;
     myLabel.name = string;
     myLabel.fontSize = 30;
@@ -98,7 +119,7 @@ static NSString * const TileLetterName = @"movable";
             touchedNode = node;
         }
         
-        // game over behavior, currently broken
+        // game over behavior
         else if ([node.name isEqualToString:@"tryAgain"]){
             NSLog(@"refreshing scene");
         
@@ -145,7 +166,7 @@ static NSString * const TileLetterName = @"movable";
     //special behavior for first tile
     if (_numberOfTilesInSlots == 0) {
         [tile setPosition:CGPointMake(CGRectGetMidX(self.frame),
-                                      450)];
+                                      _minimumBoardHeight+50)];
     }
     
     else {
@@ -193,7 +214,7 @@ static NSString * const TileLetterName = @"movable";
     
     
     // if the node is an active Tile and is high enough, then snap it into place on the Board
-    if([[_selectedNode name] isEqualToString:TileLetterName] && (_selectedNode.position.y > 400)) {
+    if([[_selectedNode name] isEqualToString:TileLetterName] && (_selectedNode.position.y > _minimumBoardHeight)) {
       
         [self snapSelectedTileIntoPlace:_selectedNode];
         
@@ -245,8 +266,105 @@ static NSString * const TileLetterName = @"movable";
     
     NSLog(@"current word: %@", _currentWord);
     [self isGameOver];
+    [self cullPossibleWordList];
 
 }
+
+
+
+-(void)cullPossibleWordList{
+    //get an array of the letters in the tray
+    const char *arrayofLettersForMaster = [_currentWord UTF8String];
+    NSLog(@"%s", arrayofLettersForMaster);
+    NSMutableArray *wordsToKeep = [[NSMutableArray alloc] init];
+    [wordsToKeep removeAllObjects];
+    
+    for (NSString *possibleWord in _arrayOfPossibleWords) { //intended solution for this is just to break out of the loop as soon as I have ~8 valid continuations
+        NSMutableArray *lettersTheyHaveInCommon = [[NSMutableArray alloc] init];
+        [lettersTheyHaveInCommon removeAllObjects];
+        //first, convert the word into an array of letters
+        const char *arrayOfLettersInPossibleWord = [possibleWord UTF8String];
+        for (int i = 0; arrayOfLettersInPossibleWord[i]; i++) {
+            //for each letter in the possible word, we're going to check if it's in the tray
+            for (int j = 0; arrayofLettersForMaster[j]; j++) {
+                //if it's the case that the letter is in the tray, we're going to add that letter to a new array
+                if (arrayOfLettersInPossibleWord[i] == arrayofLettersForMaster[j]){
+                    NSString *lettertoAdd = [NSString stringWithFormat:@"%c" , arrayOfLettersInPossibleWord[i]];
+                    [lettersTheyHaveInCommon addObject:lettertoAdd];
+                    NSLog(@"Just added %@",lettertoAdd);
+                    break;
+                }
+            }
+            //the current problem with this is that it mishandles duplicates. Eg., if the board is "IM" and our word is mimic, it will output "MIMI"
+            //once we've done this for all letters we're going to compare lettersTheyHaveInCommon with arrayofLettersForMaster
+            NSString *stringOfLettersTheyHaveInCommon = [lettersTheyHaveInCommon componentsJoinedByString:@""];
+            NSString *stringofLettersForMaster = [NSString stringWithFormat:@"%s" , arrayofLettersForMaster];
+            //const char *charLettersTheyHaveInCommon = [stringOfLettersTheyHaveInCommon UTF8String];
+            NSLog(@"stringOfLettersTheyHaveInCommon is %@",stringOfLettersTheyHaveInCommon);
+            NSLog(@"stringofLettersForMaster is %@",stringofLettersForMaster);
+            if ([stringofLettersForMaster isEqualToString:stringOfLettersTheyHaveInCommon]) {
+                NSLog(@"%@ is a potential match", possibleWord);
+                [wordsToKeep addObject:possibleWord];
+                break;
+            }
+            else {
+                NSLog(@"%@ is not a potential match", possibleWord);
+            }
+        }
+    }
+    NSLog(@"Words to keep: %@", wordsToKeep);
+    _arrayOfPossibleWords = wordsToKeep;
+    [self generateNewTiles];
+}
+
+-(void)generateNewTiles {     //generate tiles based on arrayOfPossibleLetters
+
+    //first init the array of possible letters, that will eventually turn into tiles
+    NSMutableArray *arrayOfPossibleLetters = [[NSMutableArray alloc] init];
+    [arrayOfPossibleLetters removeAllObjects];
+    const char *arrayofLettersForMaster = [_currentWord UTF8String];
+    
+
+    for (NSString *possibleWord in _arrayOfPossibleWords) {    //look at potential words in _arrayOfPossibleWords
+        //for each word, convert into an array of letters.
+        const char *arrayOfLettersInPossibleWord = [possibleWord UTF8String];
+        
+        //first, we're only going to add letters that aren't captured in the tray
+        for (int j = 0; arrayofLettersForMaster[j]; j++) {
+            for (int i = 0; arrayOfLettersInPossibleWord[i]; i++) {
+                if (arrayOfLettersInPossibleWord[i] == arrayofLettersForMaster[j]){
+                    
+                }
+                else {
+                    NSString *letterToLookForInArray = [NSString stringWithFormat:@"%c" , arrayOfLettersInPossibleWord[i]]; //convert the letter into an NSString
+                    if ([arrayOfPossibleLetters indexOfObject:letterToLookForInArray] == NSNotFound){
+                        [arrayOfPossibleLetters addObject:letterToLookForInArray];
+                        NSLog(@"%@ is a letter in the word %@ that isn't in the tray and hasn't been added already",letterToLookForInArray,possibleWord);
+
+                    }
+                    //break;
+                }
+            }
+            
+        }
+        
+    }
+    NSLog(@"New list of possible letters is %@", arrayOfPossibleLetters);
+    [self enumerateChildNodesWithName:TileLetterName usingBlock:^(SKNode *node, BOOL *stop) {
+        [node removeFromParent];
+    }];
+    
+    int i;
+    for (i = 0; i < arrayOfPossibleLetters.count; i++) {
+        CGFloat position = i*40.0f+20;
+        NSString *letterToPass = [arrayOfPossibleLetters objectAtIndex:i];
+        [self generateTileWithLetter:letterToPass withXPosition:position];
+        
+    }
+
+    
+}
+
 
 // not sure when/why this would get called but snaps back the selected tile
 
@@ -268,7 +386,7 @@ static NSString * const TileLetterName = @"movable";
     
     
     
-    if(_selectedNode.position.y > 400 && ![_selectedNode.name isEqualToString:@"immovable"]) {
+    if(_selectedNode.position.y > _minimumBoardHeight && ![_selectedNode.name isEqualToString:@"immovable"]) {
         
         _tilesAreSlidOver = TRUE;
         
@@ -295,7 +413,7 @@ static NSString * const TileLetterName = @"movable";
         
         //set position.x of tiles in the sorted array, without setting the position of the selected node:
         
-        NSLog(@"setting position");
+//NSLog(@"setting position");
         CGFloat anchorPosition = (self.view.frame.size.width/2)-_numberOfTilesInSlots*20;
         for (SKNode *node in sortedArray){
             if (node == _selectedNode){
@@ -305,7 +423,7 @@ static NSString * const TileLetterName = @"movable";
                 // NSUInteger i = [sortedArray indexOfObject:node];
                 int displacement = [sortedArray indexOfObject:node]*40;
                 CGFloat newXPosition = anchorPosition + displacement;
-                NSLog(@"%f",newXPosition);
+              //  NSLog(@"%f",newXPosition);
                 [node setPosition:CGPointMake(newXPosition, node.position.y)];
             }
         }
@@ -313,7 +431,7 @@ static NSString * const TileLetterName = @"movable";
     }
     
     //behavior to return tiles to previous location on Board if the selected tile leaves the Board area
-    else if (_tilesAreSlidOver && _selectedNode.position.y < 400) {
+    else if (_tilesAreSlidOver && _selectedNode.position.y < _minimumBoardHeight) {
         
         //make an array of all immovable tiles
         NSMutableArray *fixedTiles = [[NSMutableArray alloc] init];
@@ -335,20 +453,20 @@ static NSString * const TileLetterName = @"movable";
         
         //set position.x of tiles in the sorted array, without setting the position of the selected node:
         
-        NSLog(@"setting position");
+       // NSLog(@"setting position");
         CGFloat anchorPosition = (self.view.frame.size.width/2)-(_numberOfTilesInSlots-1)*20;
         for (SKNode *node in sortedArray){
             
                 int displacement = [sortedArray indexOfObject:node]*40;
                 CGFloat newXPosition = anchorPosition + displacement;
-                NSLog(@"%f",newXPosition);
+              //  NSLog(@"%f",newXPosition);
                 [node setPosition:CGPointMake(newXPosition, node.position.y)];
         }
     }
 }
 
 -(void)isGameOver{
-    if ([_currentWord isEqualToString:@"FUCKYES!"]){
+    if ([_currentWord isEqualToString:@"FUNTIMES"]){
         for (SKSpriteNode *tiles in [self children]) {
             if ([tiles.name isEqualToString:@"immovable"]){
                 [tiles setColor:[SKColor greenColor]];
@@ -360,6 +478,8 @@ static NSString * const TileLetterName = @"movable";
     }
     
 }
+
+
 -(void)tryAgainButton{
     [self removeAllChildren];
     SKSpriteNode *sup = [[SKSpriteNode alloc] init];
@@ -382,6 +502,14 @@ static NSString * const TileLetterName = @"movable";
 float degToRad(float degree) {
 	return degree / 180.0f * M_PI;
 }
+
+
+//wordArray = array of eligible words
+//when currentWord updates:
+// for word in wordArray:
+// if word contains all the letters in currentWord then:
+// take all the letters in word
+// if letters aren't already in the tile slots, add to tile slot
 
 
 @end
