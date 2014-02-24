@@ -23,6 +23,8 @@ static NSString * const TileLetterName = @"movable";
 @property (nonatomic, strong) NSString* currentWord;
 @property (nonatomic, strong) NSString* letterToAppend;
 @property (strong, nonatomic) NSMutableArray *arrayOfPossibleWords;
+@property (strong, nonatomic) NSMutableArray *arrayOfPossibleWordsToRemove;
+
 
 
 
@@ -39,6 +41,7 @@ static NSString * const TileLetterName = @"movable";
                                                       encoding:NSUTF8StringEncoding
                                                          error:NULL];
         NSString *rawStuffCaps = [content uppercaseString];
+
     
         
         
@@ -47,33 +50,29 @@ static NSString * const TileLetterName = @"movable";
         _tilesAreSlidOver = FALSE;
         _currentWord = @"";
         _minimumBoardHeight = 300;
-        self.arrayOfPossibleWords= [[NSMutableArray alloc] initWithObjects:@"TIMESLOT",@"INCISIVE",@"ANTIQUES",@"HANGOVER",@"ANIMATED",@"FLATWARE", @"HANGOUT",@"APPETITE", nil];
-    //  self.arrayOfPossibleWords = [[rawStuffCaps componentsSeparatedByString:@" "] mutableCopy];
-      //self.arrayOfPossibleWords = [rawStuff componentsSeparatedByString:@" "];
         
-        UIColor *deep = [UIColor colorWithRed:3.0/255 green:5.0/255 blue:13.0/255 alpha:1];
+        
 
-        self.backgroundColor = deep;//[SKColor colorWithRed:0.15 green:0.15 blue:0.3 alpha:1.0];
+      self.arrayOfPossibleWords = [[rawStuffCaps componentsSeparatedByString:@"\n"] mutableCopy];
+        
+        UIColor *backgroundColor = [UIColor colorWithRed:3.0/255 green:5.0/255 blue:13.0/255 alpha:1];
+        self.backgroundColor = backgroundColor;
         
         
         //starting array of letters
-        NSArray *array = [NSArray arrayWithObjects:@"S",@"E",@"T",@"M",@"F",@"N", @"I", @"U", nil];
+        NSArray *array = [NSArray arrayWithObjects:@"A",@"C",@"X",@"M",@"F",@"N", @"I", @"U", nil];
         
         //generate the tiles with letters
         for (int i = 0; i < array.count; i++) {
             CGFloat position = i*40.0f+20;
-            NSString *letterToPass = [array objectAtIndex:i];
+            NSString *lowerLetterToPass = [array objectAtIndex:i];
+            NSString *letterToPass = [lowerLetterToPass uppercaseString];
             [self generateTileWithLetter:letterToPass withXPosition:position];
 
         }
     }
     return self;
 }
-
-- (void)addTileToParent:(SKNode*)parentNode letter:(NSString*)letter x:(CGFloat)x {
-    
-}
-
 
 - (void)generateTileWithLetter:(NSString*)string withXPosition:(CGFloat)x {
     
@@ -266,103 +265,283 @@ static NSString * const TileLetterName = @"movable";
     
     NSLog(@"current word: %@", _currentWord);
     [self isGameOver];
-    [self cullPossibleWordList];
+    [self comparePossibleWordWithCurrentWord];
 
 }
 
 
+// REVIST THIS FOR SOLUTION TO POSITION-AGNOSTIC GAME
+//-(void)cullPossibleWordList{
+//    //get an array of the letters in the tray
+//    const char *arrayofLettersForMaster = [_currentWord UTF8String];
+//    NSLog(@"%s", arrayofLettersForMaster);
+//    NSMutableArray *wordsToKeep = [[NSMutableArray alloc] init];
+//    [wordsToKeep removeAllObjects];
+//    
+//    for (NSString *possibleWord in _arrayOfPossibleWords) { //intended solution for this is just to break out of the loop as soon as I have ~8 valid continuations
+//        NSMutableArray *lettersTheyHaveInCommon = [[NSMutableArray alloc] init];
+//        [lettersTheyHaveInCommon removeAllObjects];
+//        //first, convert the word into an array of letters
+//        const char *arrayOfLettersInPossibleWord = [possibleWord UTF8String];
+//        for (int i = 0; arrayOfLettersInPossibleWord[i]; i++) {
+//            //for each letter in the possible word, we're going to check if it's in the tray
+//            for (int j = 0; arrayofLettersForMaster[j]; j++) {
+//                //if it's the case that the letter is in the tray, we're going to add that letter to a new array
+//                if (arrayOfLettersInPossibleWord[i] == arrayofLettersForMaster[j]){
+//                    NSString *lettertoAdd = [NSString stringWithFormat:@"%c" , arrayOfLettersInPossibleWord[i]];
+//                    [lettersTheyHaveInCommon addObject:lettertoAdd];
+//                    NSLog(@"Just added %@",lettertoAdd);
+//                    break;
+//                }
+//            }
+//            //the current problem with this is that it mishandles duplicates. Eg., if the board is "IM" and our word is mimic, it will output "MIMI"
+//            //once we've done this for all letters we're going to compare lettersTheyHaveInCommon with arrayofLettersForMaster
+//            NSString *stringOfLettersTheyHaveInCommon = [lettersTheyHaveInCommon componentsJoinedByString:@""];
+//            NSString *stringofLettersForMaster = [NSString stringWithFormat:@"%s" , arrayofLettersForMaster];
+//            //const char *charLettersTheyHaveInCommon = [stringOfLettersTheyHaveInCommon UTF8String];
+//            NSLog(@"stringOfLettersTheyHaveInCommon is %@",stringOfLettersTheyHaveInCommon);
+//            NSLog(@"stringofLettersForMaster is %@",stringofLettersForMaster);
+//            if ([stringofLettersForMaster isEqualToString:stringOfLettersTheyHaveInCommon]) {
+//                NSLog(@"%@ is a potential match", possibleWord);
+//                [wordsToKeep addObject:possibleWord];
+//                break;
+//            }
+//            else {
+//                NSLog(@"%@ is not a potential match", possibleWord);
+//            }
+//        }
+//    }
+//    NSLog(@"Words to keep: %@", wordsToKeep);
+//    _arrayOfPossibleWords = wordsToKeep;
+//    [self generateNewTiles];
+//}
 
--(void)cullPossibleWordList{
-    //get an array of the letters in the tray
-    const char *arrayofLettersForMaster = [_currentWord UTF8String];
-    NSLog(@"%s", arrayofLettersForMaster);
-    NSMutableArray *wordsToKeep = [[NSMutableArray alloc] init];
-    [wordsToKeep removeAllObjects];
+//-(void)generateNewTiles {     //generate tiles based on arrayOfPossibleLetters
+//
+//    //first init the array of possible letters, that will eventually turn into tiles
+//    NSMutableArray *arrayOfPossibleLetters = [[NSMutableArray alloc] init];
+//    [arrayOfPossibleLetters removeAllObjects];
+//    const char *arrayofLettersForMaster = [_currentWord UTF8String];
+//    
+//
+//    for (NSString *possibleWord in _arrayOfPossibleWords) {    //look at potential words in _arrayOfPossibleWords
+//        //for each word, convert into an array of letters.
+//        const char *arrayOfLettersInPossibleWord = [possibleWord UTF8String];
+//        
+//        //first, we're only going to add letters that aren't captured in the tray
+//        for (int j = 0; arrayofLettersForMaster[j]; j++) {
+//            for (int i = 0; arrayOfLettersInPossibleWord[i]; i++) {
+//                if (arrayOfLettersInPossibleWord[i] == arrayofLettersForMaster[j]){
+//                    
+//                }
+//                else {
+//                    NSString *letterToLookForInArray = [NSString stringWithFormat:@"%c" , arrayOfLettersInPossibleWord[i]]; //convert the letter into an NSString
+//                    if ([arrayOfPossibleLetters indexOfObject:letterToLookForInArray] == NSNotFound){
+//                        [arrayOfPossibleLetters addObject:letterToLookForInArray];
+//                        NSLog(@"%@ is a letter in the word %@ that isn't in the tray and hasn't been added already",letterToLookForInArray,possibleWord);
+//
+//                    }
+//                    //break;
+//                }
+//            }
+//            
+//        }
+//        
+//    }
+//    NSLog(@"New list of possible letters is %@", arrayOfPossibleLetters);
+//    [self enumerateChildNodesWithName:TileLetterName usingBlock:^(SKNode *node, BOOL *stop) {
+//        [node removeFromParent];
+//    }];
+//    
+//    int i;
+//    for (i = 0; i < arrayOfPossibleLetters.count; i++) {
+//        CGFloat position = i*40.0f+20;
+//        NSString *letterToPass = [arrayOfPossibleLetters objectAtIndex:i];
+//        [self generateTileWithLetter:letterToPass withXPosition:position];
+//        
+//    }
+//
+//    
+//}
+
+
+-(void)comparePossibleWordWithCurrentWord {
     
-    for (NSString *possibleWord in _arrayOfPossibleWords) { //intended solution for this is just to break out of the loop as soon as I have ~8 valid continuations
-        NSMutableArray *lettersTheyHaveInCommon = [[NSMutableArray alloc] init];
-        [lettersTheyHaveInCommon removeAllObjects];
-        //first, convert the word into an array of letters
-        const char *arrayOfLettersInPossibleWord = [possibleWord UTF8String];
-        for (int i = 0; arrayOfLettersInPossibleWord[i]; i++) {
-            //for each letter in the possible word, we're going to check if it's in the tray
-            for (int j = 0; arrayofLettersForMaster[j]; j++) {
-                //if it's the case that the letter is in the tray, we're going to add that letter to a new array
-                if (arrayOfLettersInPossibleWord[i] == arrayofLettersForMaster[j]){
-                    NSString *lettertoAdd = [NSString stringWithFormat:@"%c" , arrayOfLettersInPossibleWord[i]];
-                    [lettersTheyHaveInCommon addObject:lettertoAdd];
-                    NSLog(@"Just added %@",lettertoAdd);
-                    break;
-                }
-            }
-            //the current problem with this is that it mishandles duplicates. Eg., if the board is "IM" and our word is mimic, it will output "MIMI"
-            //once we've done this for all letters we're going to compare lettersTheyHaveInCommon with arrayofLettersForMaster
-            NSString *stringOfLettersTheyHaveInCommon = [lettersTheyHaveInCommon componentsJoinedByString:@""];
-            NSString *stringofLettersForMaster = [NSString stringWithFormat:@"%s" , arrayofLettersForMaster];
-            //const char *charLettersTheyHaveInCommon = [stringOfLettersTheyHaveInCommon UTF8String];
-            NSLog(@"stringOfLettersTheyHaveInCommon is %@",stringOfLettersTheyHaveInCommon);
-            NSLog(@"stringofLettersForMaster is %@",stringofLettersForMaster);
-            if ([stringofLettersForMaster isEqualToString:stringOfLettersTheyHaveInCommon]) {
-                NSLog(@"%@ is a potential match", possibleWord);
-                [wordsToKeep addObject:possibleWord];
-                break;
-            }
-            else {
-                NSLog(@"%@ is not a potential match", possibleWord);
-            }
+    //if the currentword is less than 3 letters we're going to handle things differently
+    if ([_currentWord length] < 2) {
+        const char *arrayofLettersForCurrentWord = [_currentWord UTF8String];
+        
+        NSString *whichLetter = [NSString stringWithFormat:@"lettersthatfollow_%c",arrayofLettersForCurrentWord[0]];
+        
+        NSString *adjusted = [whichLetter lowercaseString];
+        
+        NSLog(@"Filename without txt: %@",adjusted);
+
+        
+        
+        NSString *path = [[NSBundle mainBundle] pathForResource:adjusted
+                                                         ofType:@"txt"];
+        
+        NSLog(@"Full name: %@",path);
+
+        NSString *content = [NSString stringWithContentsOfFile:path
+                                                      encoding:NSUTF8StringEncoding
+                                                         error:NULL];
+        NSLog(@"Content of file: %@",content);
+        for (int i = 0; i < content.length; i++){
+            char c = [content characterAtIndex:i];
+            NSLog(@"looking at letter %c",c);
+            CGFloat position = i*40.0f+20;
+            NSString *lowerletterToPass = [NSString stringWithFormat:@"%c",c];
+            NSString *letterToPass = [lowerletterToPass uppercaseString];
+            [self generateTileWithLetter:letterToPass withXPosition:position];
+            
         }
     }
-    NSLog(@"Words to keep: %@", wordsToKeep);
-    _arrayOfPossibleWords = wordsToKeep;
-    [self generateNewTiles];
-}
-
--(void)generateNewTiles {     //generate tiles based on arrayOfPossibleLetters
-
-    //first init the array of possible letters, that will eventually turn into tiles
-    NSMutableArray *arrayOfPossibleLetters = [[NSMutableArray alloc] init];
-    [arrayOfPossibleLetters removeAllObjects];
-    const char *arrayofLettersForMaster = [_currentWord UTF8String];
     
-
-    for (NSString *possibleWord in _arrayOfPossibleWords) {    //look at potential words in _arrayOfPossibleWords
-        //for each word, convert into an array of letters.
-        const char *arrayOfLettersInPossibleWord = [possibleWord UTF8String];
+    else if ([_currentWord length] == 2){ //we need to pick our text file
         
-        //first, we're only going to add letters that aren't captured in the tray
-        for (int j = 0; arrayofLettersForMaster[j]; j++) {
-            for (int i = 0; arrayOfLettersInPossibleWord[i]; i++) {
-                if (arrayOfLettersInPossibleWord[i] == arrayofLettersForMaster[j]){
-                    
-                }
-                else {
-                    NSString *letterToLookForInArray = [NSString stringWithFormat:@"%c" , arrayOfLettersInPossibleWord[i]]; //convert the letter into an NSString
-                    if ([arrayOfPossibleLetters indexOfObject:letterToLookForInArray] == NSNotFound){
-                        [arrayOfPossibleLetters addObject:letterToLookForInArray];
-                        NSLog(@"%@ is a letter in the word %@ that isn't in the tray and hasn't been added already",letterToLookForInArray,possibleWord);
+        const char *arrayofLettersForCurrentWord = [_currentWord UTF8String];
+        NSString *whichLetter = [NSString stringWithFormat:@"wordsthatbeginwith_%c",arrayofLettersForCurrentWord[0]];
+        NSString *adjusted = [whichLetter lowercaseString];
+        NSLog(@"Filename without txt: %@",adjusted);
+        NSString *path = [[NSBundle mainBundle] pathForResource:adjusted
+                                                         ofType:@"txt"];
+        
+        NSLog(@"Full name: %@",path);
+        
+        NSString *lowerContent = [NSString stringWithContentsOfFile:path
+                                                      encoding:NSUTF8StringEncoding
+                                                         error:NULL];
+        NSString *content = [lowerContent uppercaseString];
+        
+        _arrayOfPossibleWords = [[content componentsSeparatedByString:@"\n"] mutableCopy];
 
-                    }
-                    //break;
+        NSMutableArray *arrayOfPossibleLetters = [[NSMutableArray alloc] init];
+        [arrayOfPossibleLetters removeAllObjects];
+        
+        NSMutableArray *wordsToKeep = [[NSMutableArray alloc] init];
+        [wordsToKeep removeAllObjects];
+        
+        
+        for (NSString *possibleWord in _arrayOfPossibleWords) {
+            
+            const char *arrayOfLettersInPossibleWord = [possibleWord UTF8String];
+            const char *arrayofLettersForCurrentWord = [_currentWord UTF8String];
+            BOOL isPossibleWordAMatch = TRUE;
+            
+            
+            //first, we're only going to add letters that aren't captured in the tray
+            for (int j = 0; arrayofLettersForCurrentWord[j]; j++) {
+                if (arrayofLettersForCurrentWord[j] != arrayOfLettersInPossibleWord[j]){
+                    //kick it out of the array
+                    isPossibleWordAMatch = FALSE;
+                    NSLog(@"%@ is not a potential match", possibleWord);
+                    //  [_arrayOfPossibleWordsToRemove addObject:possibleWord];
+                }
+                
+            }
+            if (isPossibleWordAMatch) {
+                NSLog(@"%@ is a potential match", possibleWord);
+                [wordsToKeep addObject:possibleWord];
+                
+                for (int i = [_currentWord length]; arrayOfLettersInPossibleWord[i]; i++) {
+                    
+                    NSString *letterToLookForInArray = [NSString stringWithFormat:@"%c" , arrayOfLettersInPossibleWord[[_currentWord length]]];
+                    [arrayOfPossibleLetters addObject:letterToLookForInArray];
+                    NSLog(@"%@ is a letter in the word %@ that isn't in the tray and hasn't been added already",letterToLookForInArray,possibleWord);
                 }
             }
             
+            
+        }
+        //remove dupes
+        NSArray *uniqueArrayOfPossibileLetters = [[NSSet setWithArray:arrayOfPossibleLetters] allObjects];
+        NSLog(@"New list of possible letters is %@", uniqueArrayOfPossibileLetters);
+        [self enumerateChildNodesWithName:TileLetterName usingBlock:^(SKNode *node, BOOL *stop) {
+            [node removeFromParent];
+        }];
+        
+        int i;
+        for (i = 0; i < uniqueArrayOfPossibileLetters.count; i++) {
+            CGFloat position = i*40.0f+20;
+            NSString *letterToPass = [uniqueArrayOfPossibileLetters objectAtIndex:i];
+            [self generateTileWithLetter:letterToPass withXPosition:position];
+            
         }
         
+        //  [_arrayOfPossibleWords removeObjectsInArray:_arrayOfPossibleWordsToRemove];
+        _arrayOfPossibleWords = wordsToKeep;
+        //NSLog(@"Words to remove: %@",_arrayOfPossibleWordsToRemove);
+        NSLog(@"Words to keep: %@",_arrayOfPossibleWords);
     }
-    NSLog(@"New list of possible letters is %@", arrayOfPossibleLetters);
+
+
+        
+    
+
+    else {
+    
+    
+    
+    NSMutableArray *arrayOfPossibleLetters = [[NSMutableArray alloc] init];
+    [arrayOfPossibleLetters removeAllObjects];
+    
+    NSMutableArray *wordsToKeep = [[NSMutableArray alloc] init];
+    [wordsToKeep removeAllObjects];
+    
+    
+    for (NSString *possibleWord in _arrayOfPossibleWords) {
+        
+        const char *arrayOfLettersInPossibleWord = [possibleWord UTF8String];
+        const char *arrayofLettersForCurrentWord = [_currentWord UTF8String];
+        BOOL isPossibleWordAMatch = TRUE;
+        
+
+        //first, we're only going to add letters that aren't captured in the tray
+        for (int j = 0; arrayofLettersForCurrentWord[j]; j++) {
+            if (arrayofLettersForCurrentWord[j] != arrayOfLettersInPossibleWord[j]){
+                //kick it out of the array
+                isPossibleWordAMatch = FALSE;
+                NSLog(@"%@ is not a potential match", possibleWord);
+              //  [_arrayOfPossibleWordsToRemove addObject:possibleWord];
+            }
+            
+        }
+        if (isPossibleWordAMatch) {
+            NSLog(@"%@ is a potential match", possibleWord);
+            [wordsToKeep addObject:possibleWord];
+            
+            for (int i = [_currentWord length]; arrayOfLettersInPossibleWord[i]; i++) {
+            
+            NSString *letterToLookForInArray = [NSString stringWithFormat:@"%c" , arrayOfLettersInPossibleWord[[_currentWord length]]];
+            [arrayOfPossibleLetters addObject:letterToLookForInArray];
+            NSLog(@"%@ is a letter in the word %@ that isn't in the tray and hasn't been added already",letterToLookForInArray,possibleWord);
+        }
+        }
+        
+
+    }
+    //remove dupes
+    NSArray *uniqueArrayOfPossibileLetters = [[NSSet setWithArray:arrayOfPossibleLetters] allObjects];
+    NSLog(@"New list of possible letters is %@", uniqueArrayOfPossibileLetters);
     [self enumerateChildNodesWithName:TileLetterName usingBlock:^(SKNode *node, BOOL *stop) {
         [node removeFromParent];
     }];
     
     int i;
-    for (i = 0; i < arrayOfPossibleLetters.count; i++) {
+    for (i = 0; i < uniqueArrayOfPossibileLetters.count; i++) {
         CGFloat position = i*40.0f+20;
-        NSString *letterToPass = [arrayOfPossibleLetters objectAtIndex:i];
+        NSString *letterToPass = [uniqueArrayOfPossibileLetters objectAtIndex:i];
         [self generateTileWithLetter:letterToPass withXPosition:position];
         
     }
 
-    
+  //  [_arrayOfPossibleWords removeObjectsInArray:_arrayOfPossibleWordsToRemove];
+    _arrayOfPossibleWords = wordsToKeep;
+    //NSLog(@"Words to remove: %@",_arrayOfPossibleWordsToRemove);
+    NSLog(@"Words to keep: %@",_arrayOfPossibleWords);
+}
 }
 
 
@@ -466,7 +645,7 @@ static NSString * const TileLetterName = @"movable";
 }
 
 -(void)isGameOver{
-    if ([_currentWord isEqualToString:@"FUNTIMES"]){
+    if ([_arrayOfPossibleWords containsObject: _currentWord]) {
         for (SKSpriteNode *tiles in [self children]) {
             if ([tiles.name isEqualToString:@"immovable"]){
                 [tiles setColor:[SKColor greenColor]];
