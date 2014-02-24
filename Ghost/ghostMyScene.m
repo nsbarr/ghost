@@ -398,11 +398,42 @@ static NSString * const TileLetterName = @"movable";
             
         }
     }
+    else if ([_currentWord length] == 2){
+        const char *arrayofLettersForCurrentWord = [_currentWord UTF8String];
+        
+        NSString *whichLetter = [NSString stringWithFormat:@"lettersthatfollow_%c%c",arrayofLettersForCurrentWord[0],arrayofLettersForCurrentWord[1]];
+        
+        NSString *adjusted = [whichLetter lowercaseString];
+        
+        NSLog(@"Filename without txt: %@",adjusted);
+        
+        
+        
+        NSString *path = [[NSBundle mainBundle] pathForResource:adjusted
+                                                         ofType:@"txt"];
+        
+        NSLog(@"Full name: %@",path);
+        
+        NSString *content = [NSString stringWithContentsOfFile:path
+                                                      encoding:NSUTF8StringEncoding
+                                                         error:NULL];
+        NSLog(@"Content of file: %@",content);
+        for (int i = 0; i < content.length; i++){
+            char c = [content characterAtIndex:i];
+            NSLog(@"looking at letter %c",c);
+            CGFloat position = i*40.0f+20;
+            NSString *lowerletterToPass = [NSString stringWithFormat:@"%c",c];
+            NSString *letterToPass = [lowerletterToPass uppercaseString];
+            [self generateTileWithLetter:letterToPass withXPosition:position];
+            
+        }
+
+    }
     
-    else if ([_currentWord length] == 2){ //we need to pick our text file
+    else if ([_currentWord length] == 3){
         
         const char *arrayofLettersForCurrentWord = [_currentWord UTF8String];
-        NSString *whichLetter = [NSString stringWithFormat:@"wordsthatbeginwith_%c",arrayofLettersForCurrentWord[0]];
+        NSString *whichLetter = [NSString stringWithFormat:@"wordsbegin_%c%c",arrayofLettersForCurrentWord[0],arrayofLettersForCurrentWord[1]];
         NSString *adjusted = [whichLetter lowercaseString];
         NSLog(@"Filename without txt: %@",adjusted);
         NSString *path = [[NSBundle mainBundle] pathForResource:adjusted
@@ -477,8 +508,8 @@ static NSString * const TileLetterName = @"movable";
     }
 
 
-        
-    
+
+
 
     else {
     
